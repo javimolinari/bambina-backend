@@ -12,9 +12,14 @@ sys.path.insert(0, "db")
 @app.route('/pepe', methods=['GET'])
 def pruebas():
 
-    print(sys.path)
+    try:
+        from Paises import INDE_Paises
 
-    return jsonify("FUNCIONA BIEN")
+        return jsonify(INDE_Paises().get_INDE_paises())
+
+    
+    except Exception as e:
+        return jsonify("Entre en error en get_INDE_Paises", e)
 
 ### RUTAS DE PERSONAS
 @app.route('/api/get_personas', methods=['GET'])
