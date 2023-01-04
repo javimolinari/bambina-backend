@@ -1,6 +1,3 @@
-import sys
-sys.path.insert(0, ".../db")
-
 from db import get_db
 g, c = get_db()
 
