@@ -6,7 +6,7 @@ app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
 CORS(app)
 
-sys.path.insert(0, '/clases')
+sys.path.insert(0, '/clases/Indices')
 sys.path.insert(0, "db")
 
 @app.route('/pepe', methods=['GET'])
