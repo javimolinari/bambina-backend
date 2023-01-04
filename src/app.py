@@ -6,6 +6,7 @@ app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
 CORS(app)
 
+sys.path.insert(0, "/clases/Indices")
 
 @app.route('/pepe', methods=['GET'])
 def pruebas():
@@ -68,6 +69,8 @@ def delete_persona_by_id():
 @app.route('/api/get_INDE_Paises', methods=['GET'])
 def get_INDE_Paises():
     try:
+        
+
         from clases.Indices.INDE_Paises import INDE_Paises
         return jsonify(INDE_Paises().get_INDE_paises())
     
