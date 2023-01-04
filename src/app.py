@@ -6,6 +6,11 @@ app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
 CORS(app)
 
+
+@app.route('/pepe', methods=['GET'])
+def pruebas():
+    return jsonify("FUNCIONA BIEN")
+
 ### RUTAS DE PERSONAS
 @app.route('/api/get_personas', methods=['GET'])
 def get_personas():
