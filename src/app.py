@@ -11,6 +11,9 @@ sys.path.insert(0, "db")
 
 @app.route('/pepe', methods=['GET'])
 def pruebas():
+
+    print(sys.path)
+
     return jsonify("FUNCIONA BIEN")
 
 ### RUTAS DE PERSONAS
