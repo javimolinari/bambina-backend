@@ -1,5 +1,4 @@
 from db import get_db
-g, c = get_db()
 
 class Personas_busquedas:
 
@@ -22,7 +21,8 @@ class Personas_busquedas:
         # self.created_by = ''
 
     def get_persona_busqueda_columns(self):
-        global c
+        g, c = get_db()
+
         c.execute("""
             SELECT COLUMN_NAME as colname FROM information_schema.`COLUMNS` c 
             WHERE table_name = 'FVISTA_IND_Indicesporcomune' """)
@@ -30,7 +30,8 @@ class Personas_busquedas:
         return c.fetchall()
 
     def get_FVISTA_Personas_Busquedas_IndexAsociados_columns(self):
-        global c
+        g, c = get_db()
+
         c.execute("""
             SELECT COLUMN_NAME as colname FROM information_schema.`COLUMNS` c 
             WHERE table_name = 'FVISTA_Personas_Busquedas_IndexAsociados' """)
@@ -38,7 +39,7 @@ class Personas_busquedas:
         return c.fetchall()
 
     def get_comunes_disponibles_by_data(self):
-        global c
+        g, c = get_db()
 
         cadena_comunes = "'" + "','".join(map(str, self.comune)) + "'"
 
@@ -52,11 +53,11 @@ class Personas_busquedas:
 
         return c.fetchall()
 
-    def get_indices_asociados_by_idpersona(self):
+    def get_FVISTA_Personas_Busquedas_IndexAsociados(self):
         global c
 
         c.execute("""SELECT * FROM FVISTA_Personas_Busquedas_IndexAsociados WHERE gid_persona = %s
-            ORDER BY País, Provincia, Comune, Desde, Parte
+            ORDER BY País, Provincia, Comune, Año, Parte
             """,
             (self.gid_persona, )
         )
@@ -64,7 +65,7 @@ class Personas_busquedas:
         return c.fetchall()
 
     def insert_multiples_indices(self):
-        global c
+        g, c = get_db()
 
         for multi in self.comune:
             c.execute(""" 
@@ -75,12 +76,22 @@ class Personas_busquedas:
         g.commit()
 
     def delete_multiples_indices(self):
-        global c
+        g, c = get_db()
 
         for multi in self.comune:
             c.execute("DELETE FROM Personas_busquedas WHERE gid_index = '%s'", (multi, ))
 
         g.commit()  
+
+    def get_FVISTA_Personas_Busquedas_Objetivos(self):
+        g, c = get_db()
+
+        c.execute("""
+            SELECT * FROM FVISTA_Personas_Busquedas_Objetivos 
+            WHERE gid_persona = %s """, (self.gid_persona, ))
+
+        return c.fetchone()
+
 
 
 

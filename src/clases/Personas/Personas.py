@@ -1,5 +1,4 @@
 from db import get_db
-g, c = get_db()
 
 class Personas:
 
@@ -14,13 +13,14 @@ class Personas:
         # self.created_by = ''
 
     def get_personas(self):
-        global c
+        g, c = get_db()
+
         c.execute("SELECT * FROM FVISTA_Personas")
 
         return c.fetchall()
 
     def get_persona_by_name(self):
-        global g, c
+        g, c = get_db()
 
         c.execute(
             "SELECT * FROM FVISTA_Personas WHERE Nombre LIKE CONCAT ('%', %s, '%')", 
@@ -30,7 +30,8 @@ class Personas:
         return c.fetchall()
 
     def create_persona(self):
-        global g, c
+        g, c = get_db()
+
         c.execute (
             "INSERT INTO Personas (gnombre, created_by) values (%s, %s)", 
             (self.gnombre, self.created_by, )
@@ -43,7 +44,8 @@ class Personas:
         
 
     def update_persona_by_id(self):
-        global g, c
+        g, c = get_db()
+
         c.execute (
             "UPDATE Personas SET gnombre = %s WHERE gid_persona = %s", 
             (self.gnombre, self.gid_persona, )
@@ -52,7 +54,8 @@ class Personas:
         g.commit()
 
     def delete_persona_by_id(self):
-        global g, c
+        g, c = get_db()
+        
         c.execute (
             "UPDATE Personas SET activo = 0 WHERE gid_persona = %s", 
             (self.gid_persona, )

@@ -1,5 +1,4 @@
 from db import get_db
-g, c = get_db()
 
 class INDE_Paises:
 
@@ -7,7 +6,8 @@ class INDE_Paises:
         ''
 
     def get_INDE_paises(self):
-        global c
+        g, c = get_db()
+        
         c.execute("""SELECT gid_pais, gdescripcion FROM INDE_Paises""")
 
         return c.fetchall()

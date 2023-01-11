@@ -1,5 +1,4 @@
 from db import get_db
-g, c = get_db()
 
 class INDE_Comunes:
 
@@ -9,7 +8,7 @@ class INDE_Comunes:
         ''
 
     def get_INDE_comunes_by_provincia(self):
-        global c
+        g, c = get_db()
 
         c.execute("""
             SELECT gid_comune, gdescripcion FROM INDE_Comunes WHERE gid_provincia = %s 

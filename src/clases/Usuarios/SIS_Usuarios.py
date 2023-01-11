@@ -1,5 +1,4 @@
 from db import get_db
-g, c = get_db()
 
 class SIS_Usuarios:
 
@@ -14,7 +13,8 @@ class SIS_Usuarios:
         ''
       
     def get_usuario(self):
-        global c
+        g, c = get_db()
+
         c.execute("""
             SELECT * FROM FVISTA_SIS_Usuarios
             WHERE Usuario = %s AND Password = %s""", (self.gusuario, self.gpassword ))

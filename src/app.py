@@ -1,40 +1,62 @@
 import sys
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-
-app = Flask(__name__)
-app.config['JSON_SORT_KEYS'] = False
-CORS(app)
-
 sys.path.insert(0, "db")
 sys.path.append('/clases')
 
-@app.route('/pepe', methods=['GET'])
-def pruebas():
+from flask import Flask, request, jsonify, session
+from flask_cors import CORS
+import functools
 
-   return jsonify("SERVER CONNECTED")
+import db
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = 'Gskdjanasjdl'
+db.init_app(app)
+
+CORS(app)
+
+
+def token_required(view):
+    @functools.wraps(view)
+    def wrapped_view(**kwars):
+        if session.get('token') is None:
+            return jsonify('Expired')
+
+        return view(**kwars)
+
+    return wrapped_view
+
+
+@app.route('/api/pepe', methods=['GET'])
+def pruebas():
+    from clases.Personas.Personas import Personas
+    p = Personas()
+
+    print (p.get_personas())
+
+
+    return jsonify("SERVER CONNECTED")
 
 ### RUTAS DE PERSONAS
 @app.route('/api/get_personas', methods=['GET'])
 def get_personas():
-    from clases.Personas import Personas
+    from clases.Personas.Personas import Personas
     p = Personas()
 
     return jsonify(p.get_personas())
  
-@app.route('/api/get_persona_by_name', methods=['POST'])
+@app.route('/api/get_persona_by_name', methods=['GET'])
 def get_persona_by_name():
-    from clases.Personas import Personas
-    p = Personas()
+    from clases.Personas.Personas import Personas
+    Personas = Personas()
 
-    r = request.json
-    p.gnombre = r
+    r = request.args
+    Personas.gnombre = r.get('gnombre')
     
-    return jsonify(p.get_persona_by_name())
+    return jsonify(Personas.get_persona_by_name())
 
 @app.route('/api/create_persona', methods=['POST'])
 def create_persona():
-    from clases.Personas import Personas
+    from clases.Personas.Personas import Personas
     p = Personas()
 
     r = request.json
@@ -45,7 +67,7 @@ def create_persona():
 
 @app.route('/api/update_persona_by_id', methods=['PUT'])
 def update_persona_by_id():
-    from clases.Personas import Personas
+    from clases.Personas.Personas import Personas
     p = Personas()
 
     r = request.json
@@ -69,6 +91,7 @@ def delete_persona_by_id():
 
 ### RUTAS DE INDE_Paises
 @app.route('/api/get_INDE_Paises', methods=['GET'])
+@token_required
 def get_INDE_Paises():
     try:
         from clases.Indices.INDE_Paises import INDE_Paises
@@ -160,16 +183,16 @@ def get_comunes_disponibles_by_data():
     except Exception as e:
         return jsonify("Entre en el error en get_comunes_disponibles_by_data", e);
 
-@app.route('/api/get_indices_asociados_by_idpersona', methods=['GET'])
-def get_indices_asociados_by_idpersona():
+@app.route('/api/get_FVISTA_Personas_Busquedas_IndexAsociados', methods=['GET'])
+def get_FVISTA_Personas_Busquedas_IndexAsociados():
     try:
         from clases.personas_busquedas.Personas_busquedas import Personas_busquedas
-        r = request.json
-        Personas_busquedas = Personas_busquedas()
-        Personas_busquedas.gid_persona = r['gid_persona']
+        r = request.args
 
-        return jsonify(Personas_busquedas.get_indices_asociados_by_idpersona())
-    
+        Personas_busquedas = Personas_busquedas()
+        Personas_busquedas.gid_persona = r.get('gid_persona')
+
+        return jsonify(Personas_busquedas.get_FVISTA_Personas_Busquedas_IndexAsociados())
     except Exception as e:
         return jsonify("Entre en error en get_indices_asociados_by_idpersona", e)
 
@@ -210,8 +233,22 @@ def delete_multiples_indices():
         return jsonify("Entre en error en get_indices_asociados_by_idpersona", e)
 
 
+@app.route('/api/get_FVISTA_Personas_Busquedas_Objetivos', methods=['GET'])
+def get_FVISTA_Personas_Busquedas_Objetivos():
+    try:
+        from clases.personas_busquedas.Personas_busquedas import Personas_busquedas
+        r = request.args
+
+        Personas_busquedas = Personas_busquedas()
+        Personas_busquedas.gid_persona = r.get('gid_persona')
+
+        return jsonify( Personas_busquedas.get_FVISTA_Personas_Busquedas_Objetivos())
+
+    except Exception as e:
+        return jsonify("Entre en error en get_indices_asociados_by_idpersona", e)
+
 ### RUTAS SIS_USUARIOS
-@app.route('/api/get_usuario', methods=['GET'])
+@app.route('/api/get_usuario', methods=['POST'])
 def get_usuario():
     try:
         from clases.Usuarios.SIS_Usuarios import SIS_Usuarios
@@ -248,10 +285,40 @@ def get_usuario():
             SIS_Usuarios_Token.gfechaexpiracion = tp
             SIS_Usuarios_Token.cre_usuario_token()
 
+            session.clear()
+            session['token'] = token
+
         return jsonify(token)
 
     except Exception as e:
         return jsonify("Entre en error en get_usuario", e)
+
+@app.route('/api/notExpired', methods=['POST'])
+def get_usuario_token_by_token():
+    try:
+        from clases.Usuarios.SIS_Usuarios_Token import SIS_Usuarios_Token
+        from datetime import datetime
+
+        r = request.json
+
+        SIS_Usuarios_Token = SIS_Usuarios_Token()
+        SIS_Usuarios_Token.gtoken = r[2:] #saco los primeros dos caracteres
+
+        datos = SIS_Usuarios_Token.get_usuario_token_by_token()
+
+        if not datos:
+            return jsonify ("close")
+
+        if datos['gfechaexpiracion'] < datetime.now():
+            SIS_Usuarios_Token.gid_token = datos['gid_token']
+            SIS_Usuarios_Token.del_usuario_token()
+
+            return jsonify ("close")
+        
+        return jsonify ("ok")
+
+    except Exception as e:
+        return jsonify("Entre en error en get_usuario_token_by_token", e)
 
 
 if __name__=='__main__':

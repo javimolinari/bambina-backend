@@ -1,5 +1,4 @@
 from db import get_db
-g, c = get_db()
 
 class INDE_TiposDocumento:
 
@@ -7,7 +6,8 @@ class INDE_TiposDocumento:
         ''
 
     def get_INDE_TiposDocumento(self):
-        global c
+        g, c = get_db()
+        
         c.execute("""SELECT gdescripcion FROM INDE_TiposDocumento""")
 
         return c.fetchall()
