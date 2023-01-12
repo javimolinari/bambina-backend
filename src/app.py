@@ -10,6 +10,7 @@ import db
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'Gskdjanasjdl'
+app.config['JSON_SORT_KEYS'] = False
 db.init_app(app)
 
 CORS(app)
@@ -322,5 +323,4 @@ def get_usuario_token_by_token():
 
 
 if __name__=='__main__':
-    app.config['JSON_SORT_KEYS'] = False
-    app.run(debug=True)
+    app.run(ssl_context='adhoc')
