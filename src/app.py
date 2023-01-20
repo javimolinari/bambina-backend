@@ -11,9 +11,12 @@ import db
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'Gskdjanasjdl'
 app.config['JSON_SORT_KEYS'] = False
+
 db.init_app(app)
 
 CORS(app)
+
+loggers = {}
 
 
 def token_required(view):
@@ -29,12 +32,6 @@ def token_required(view):
 
 @app.route('/api/pepe', methods=['GET'])
 def pruebas():
-    from clases.Personas.Personas import Personas
-    p = Personas()
-
-    print (p.get_personas())
-
-
     return jsonify("SERVER CONNECTED")
 
 ### RUTAS DE PERSONAS
@@ -254,8 +251,11 @@ def get_usuario():
     try:
         from clases.Usuarios.SIS_Usuarios import SIS_Usuarios
         from clases.Usuarios.SIS_Usuarios_Token import SIS_Usuarios_Token
+        from clases.Usuarios_Pantallas.SIS_Usuarios_Pantallas import SIS_Usuarios_Pantallas
 
         r = request.json
+
+        print(r)
 
         SIS_Usuarios = SIS_Usuarios()
         SIS_Usuarios.gusuario = r['gusuario']
@@ -264,13 +264,20 @@ def get_usuario():
         usu = SIS_Usuarios.get_usuario()
 
         if not usu:
-            return "El usuario o la contraseña son incorrectos"
+            return jsonify("El usuario o la contraseña son incorrectos")
 
+        #Si el usuario existe, continua con la busqueda del token y las pantallas permitidas
         SIS_Usuarios_Token = SIS_Usuarios_Token()
         SIS_Usuarios_Token.gid_usuario = usu['gid_usuario']
-
         token = SIS_Usuarios_Token.get_usuario_token_by_idusuario()
 
+        SIS_Usuarios_Pantallas = SIS_Usuarios_Pantallas()
+        SIS_Usuarios_Pantallas.gid_usuario = usu['gid_usuario']
+        pantallas = SIS_Usuarios_Pantallas.get_usuarios_pantallas()
+        
+        numtoken = ''
+
+        #Si no existe un token, genera uno
         if not token:
             from clases.Usuarios.Code_generator import code_generator, add_days
            
@@ -286,41 +293,58 @@ def get_usuario():
             SIS_Usuarios_Token.gfechaexpiracion = tp
             SIS_Usuarios_Token.cre_usuario_token()
 
-            session.clear()
-            session['token'] = token
+            #Asigno el token nuevo generado para cargar en session
+            numtoken = token
 
-        return jsonify(token)
+        else:
+            #Asigno el token activo desde de BBDD para cargar en session
+            numtoken = token['gtoken']
+
+        #Creo la nueva session del token y asocio las pantallas permitidas
+        session[numtoken] = {"gtoken":numtoken, 'gpantallas': []}
+
+        for p in pantallas:
+            session[numtoken]['gpantallas'].append(p['Pantalla'] + '|' + p['Ruta'])
+
+        return jsonify(session[numtoken])
 
     except Exception as e:
         return jsonify("Entre en error en get_usuario", e)
 
-@app.route('/api/notExpired', methods=['POST'])
+@app.route('/api/not_expired', methods=['POST'])
 def get_usuario_token_by_token():
     try:
+
+        print(request.json)
+
+        return jsonify(session)
+
         from clases.Usuarios.SIS_Usuarios_Token import SIS_Usuarios_Token
         from datetime import datetime
 
-        r = request.json
-
+        #Busca los datos relacionados el token recibido
         SIS_Usuarios_Token = SIS_Usuarios_Token()
-        SIS_Usuarios_Token.gtoken = r[2:] #saco los primeros dos caracteres
+        SIS_Usuarios_Token.gtoken = request.json
 
         datos = SIS_Usuarios_Token.get_usuario_token_by_token()
 
+        #Si no existe, devuelve close
         if not datos:
             return jsonify ("close")
 
+        #Si existe, comprueba que no esté expirado. Si lo está, borra el token de la sesion también
         if datos['gfechaexpiracion'] < datetime.now():
             SIS_Usuarios_Token.gid_token = datos['gid_token']
             SIS_Usuarios_Token.del_usuario_token()
 
+            session.pop(datos['gtoken'])
+
             return jsonify ("close")
-        
+
         return jsonify ("ok")
 
     except Exception as e:
         return jsonify("Entre en error en get_usuario_token_by_token", e)
 
-
 if __name__=='__main__':
-    app.run(ssl_context='adhoc')
+    app.run(debug=True)

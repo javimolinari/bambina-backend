@@ -1,22 +1,9 @@
-import sys
 
-from datetime import datetime
-sys.path.insert(0, "db")
 
-from db import get_db
+log = {'nw&am¡_yhkl%uxqvs?$!dfzig*¿p624038571916741280500614124810235679knhmbpsg%&ryf¡djcxiav-_!low#': ['busqueda-seguimiento', 'busqueda-alta']}
 
-g, c = get_db()
 
-def algo():
-    c.execute("""
-    SELECT * FROM Personas""")
-
-    print(c.fetchall())
-
-algo()
-
-# if fecha1 < fecha2:
-#     print("ok")
-#     exit()
-
-# print("No")
+if 'busqueda-alt' in log['nw&am¡_yhkl%uxqvs?$!dfzig*¿p624038571916741280500614124810235679knhmbpsg%&ryf¡djcxiav-_!low#']:
+    print("SI esta")
+else:
+    print("no esta")

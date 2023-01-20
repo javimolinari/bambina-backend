@@ -54,7 +54,7 @@ class Personas_busquedas:
         return c.fetchall()
 
     def get_FVISTA_Personas_Busquedas_IndexAsociados(self):
-        global c
+        g, c = get_db()
 
         c.execute("""SELECT * FROM FVISTA_Personas_Busquedas_IndexAsociados WHERE gid_persona = %s
             ORDER BY País, Provincia, Comune, Año, Parte
