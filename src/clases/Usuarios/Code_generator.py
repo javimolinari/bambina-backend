@@ -28,7 +28,8 @@ def code_generator():
     for i in sample(caracter, 28):
         token += i
 
-    return token, date
+    return token
+    #return token, date
 
 
 def add_days(time, days):

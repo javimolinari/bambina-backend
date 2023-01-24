@@ -11,7 +11,7 @@ class SIS_Usuarios_Pantallas:
         g, c = get_db()
 
         c.execute("""
-            SELECT * FROM FVISTA_Usuarios_Pantallas
+            SELECT * FROM FVISTA_SIS_Usuarios_Pantallas
             WHERE gid_usuario = %s """, (self.gid_usuario, ))
 
         return c.fetchall()

@@ -16,7 +16,7 @@ db.init_app(app)
 
 CORS(app)
 
-loggers = {}
+logs = {}
 
 
 def token_required(view):
@@ -33,6 +33,7 @@ def token_required(view):
 @app.route('/api/pepe', methods=['GET'])
 def pruebas():
     return jsonify("SERVER CONNECTED")
+
 
 ### RUTAS DE PERSONAS
 @app.route('/api/get_personas', methods=['GET'])
@@ -249,13 +250,12 @@ def get_FVISTA_Personas_Busquedas_Objetivos():
 @app.route('/api/get_usuario', methods=['POST'])
 def get_usuario():
     try:
+        global logs
+
         from clases.Usuarios.SIS_Usuarios import SIS_Usuarios
-        from clases.Usuarios.SIS_Usuarios_Token import SIS_Usuarios_Token
         from clases.Usuarios_Pantallas.SIS_Usuarios_Pantallas import SIS_Usuarios_Pantallas
 
         r = request.json
-
-        print(r)
 
         SIS_Usuarios = SIS_Usuarios()
         SIS_Usuarios.gusuario = r['gusuario']
@@ -266,11 +266,7 @@ def get_usuario():
         if not usu:
             return jsonify("El usuario o la contraseña son incorrectos")
 
-        #Si el usuario existe, continua con la busqueda del token y las pantallas permitidas
-        SIS_Usuarios_Token = SIS_Usuarios_Token()
-        SIS_Usuarios_Token.gid_usuario = usu['gid_usuario']
-        token = SIS_Usuarios_Token.get_usuario_token_by_idusuario()
-
+        #Si el usuario existe, busca las pantallas permitidas del usuario
         SIS_Usuarios_Pantallas = SIS_Usuarios_Pantallas()
         SIS_Usuarios_Pantallas.gid_usuario = usu['gid_usuario']
         pantallas = SIS_Usuarios_Pantallas.get_usuarios_pantallas()
@@ -278,73 +274,94 @@ def get_usuario():
         numtoken = ''
 
         #Si no existe un token, genera uno
-        if not token:
+        if usu['Token'] == '':
             from clases.Usuarios.Code_generator import code_generator, add_days
            
-            token, date = code_generator()
+            token = code_generator()
 
-            if r['gmantener'] == 'si':
-                tp = add_days(date, 14)
-            else:
-                tp = add_days(date, 1)
-
-            SIS_Usuarios_Token.gid_usuario = usu['gid_usuario']
-            SIS_Usuarios_Token.gtoken = token
-            SIS_Usuarios_Token.gfechaexpiracion = tp
-            SIS_Usuarios_Token.cre_usuario_token()
+            SIS_Usuarios.gid_usuario = usu['gid_usuario']
+            SIS_Usuarios.gtoken = token
+            SIS_Usuarios.update_token_by_id()
 
             #Asigno el token nuevo generado para cargar en session
             numtoken = token
 
         else:
             #Asigno el token activo desde de BBDD para cargar en session
-            numtoken = token['gtoken']
+            numtoken = usu['Token']
 
         #Creo la nueva session del token y asocio las pantallas permitidas
-        session[numtoken] = {"gtoken":numtoken, 'gpantallas': []}
+        logs[numtoken] = {}
+        logs[numtoken]['Token'] = numtoken
+        logs[numtoken]['Pantallas'] = []
 
         for p in pantallas:
-            session[numtoken]['gpantallas'].append(p['Pantalla'] + '|' + p['Ruta'])
+            logs[numtoken]['Pantallas'].append([p['Pantalla'], p['Ruta']])
 
-        return jsonify(session[numtoken])
+      
+        return jsonify(logs[numtoken])
 
     except Exception as e:
         return jsonify("Entre en error en get_usuario", e)
 
-@app.route('/api/not_expired', methods=['POST'])
-def get_usuario_token_by_token():
+@app.route('/api/token_exists', methods=['POST'])
+def token_exists():
     try:
-
-        print(request.json)
-
-        return jsonify(session)
-
-        from clases.Usuarios.SIS_Usuarios_Token import SIS_Usuarios_Token
-        from datetime import datetime
-
-        #Busca los datos relacionados el token recibido
-        SIS_Usuarios_Token = SIS_Usuarios_Token()
-        SIS_Usuarios_Token.gtoken = request.json
-
-        datos = SIS_Usuarios_Token.get_usuario_token_by_token()
+        #Comprueba que el token se encuentre en el diccionario de logs. Si es así, retorna los datos
+        #del usuario con el token solamente. Sino, crea la sesion
+        if request.json in logs:
+            return jsonify(logs[request.json])
+            
+        #Get de los datos del usuario por token
+        from clases.Usuarios.SIS_Usuarios import SIS_Usuarios
+        SIS_Usuarios = SIS_Usuarios()
+        SIS_Usuarios.gtoken = request.json
+        datos = SIS_Usuarios.get_usuario_by_token()
 
         #Si no existe, devuelve close
         if not datos:
-            return jsonify ("close")
+            return jsonify ("not logged")
 
-        #Si existe, comprueba que no esté expirado. Si lo está, borra el token de la sesion también
-        if datos['gfechaexpiracion'] < datetime.now():
-            SIS_Usuarios_Token.gid_token = datos['gid_token']
-            SIS_Usuarios_Token.del_usuario_token()
+        #Creo la session del usuario en memoria para luego cargar los permisos
+        logs[datos['Token']] = {}
+        logs[datos['Token']]['Token'] = datos['Token']
+        logs[datos['Token']]['Pantallas'] = []
 
-            session.pop(datos['gtoken'])
+        from clases.Usuarios_Pantallas.SIS_Usuarios_Pantallas import SIS_Usuarios_Pantallas
+        SIS_Usuarios_Pantallas = SIS_Usuarios_Pantallas()
+        SIS_Usuarios_Pantallas.gid_usuario = datos['gid_usuario']
+        pantallas = SIS_Usuarios_Pantallas.get_usuarios_pantallas()
 
-            return jsonify ("close")
+        for p in pantallas:
+            logs[datos['Token']]['Pantallas'].append([p['Pantalla'], p['Ruta']])
 
-        return jsonify ("ok")
+        return jsonify(logs[datos['Token']])
 
     except Exception as e:
         return jsonify("Entre en error en get_usuario_token_by_token", e)
+
+@app.route('/api/has_permission', methods=['POST'])
+def has_permission():
+    try:
+        r = request.json
+
+        #Comprueba que el token se encuentre en el diccionario de logs. Si es así, retorna los datos
+        #del usuario con el token solamente. Sino, crea la sesion
+        if not r['gtoken'] in logs:
+            return jsonify("Not logged")
+
+        for p in logs[r['gtoken']]['Pantallas']:
+            if p[0] == r['gpantalla']:
+                return jsonify('accept')
+        
+        return jsonify('denied')
+
+    except Exception as e:
+        return jsonify("Entre en error en get_usuario_token_by_token", e)
+
+@app.route('/api/session', methods=['GET'])
+def session():
+    return jsonify(logs)
 
 if __name__=='__main__':
     app.run(debug=True)
