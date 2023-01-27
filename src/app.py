@@ -231,6 +231,21 @@ def delete_multiples_indices():
     except Exception as e:
         return jsonify("Entre en error en get_indices_asociados_by_idpersona", e)
 
+@app.route('/api/personas_busquedas_update_multi_estado', methods=['PATCH'])
+def personas_busquedas_update_multi_estado():
+    try:
+        from clases.personas_busquedas.Personas_busquedas import Personas_busquedas
+
+        Personas_busquedas = Personas_busquedas()
+        Personas_busquedas.registros = request.json['registros']
+
+        Personas_busquedas.personas_busquedas_update_multi_estado_by_id()
+
+        return jsonify("ok")
+
+    except Exception as e:
+        return jsonify("Entre en error en get_indices_asociados_by_idpersona", e)
+
 
 @app.route('/api/get_FVISTA_Personas_Busquedas_Objetivos', methods=['GET'])
 def get_FVISTA_Personas_Busquedas_Objetivos():
@@ -311,7 +326,7 @@ def token_exists():
         #del usuario con el token solamente. Sino, crea la sesion
         if request.json in logs:
             return jsonify(logs[request.json])
-            
+
         #Get de los datos del usuario por token
         from clases.Usuarios.SIS_Usuarios import SIS_Usuarios
         SIS_Usuarios = SIS_Usuarios()

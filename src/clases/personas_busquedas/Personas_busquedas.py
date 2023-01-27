@@ -14,6 +14,8 @@ class Personas_busquedas:
     hasta = 0
     tipodoc = ''
 
+    registros = ''
+
     def __init__(self):
         ''
         # self.id_persona = 0
@@ -91,6 +93,15 @@ class Personas_busquedas:
             WHERE gid_persona = %s """, (self.gid_persona, ))
 
         return c.fetchone()
+
+    def personas_busquedas_update_multi_estado_by_id(self):
+        g, c = get_db()
+
+        for r in self.registros:
+            c.execute("UPDATE Personas_Busquedas_Indices SET gestado = %s WHERE gid_registro = %s ", 
+                ( r[1], r[0] ))
+
+        g.commit()
 
 
 
