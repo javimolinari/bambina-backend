@@ -139,6 +139,48 @@ def get_INDE_TiposDocumento():
     except Exception as e:
         return jsonify("Entre en error en get_INDE_TiposDocumento")
 
+@app.route('/api/get_index_por_url', methods=['POST'])
+def get_INDE_IndiciesPorComune_por_url():
+    try:
+        from clases.Indices.INDE_IndicesPorComune import INDE_IndicesPorComune
+
+        INDE_IndicesPorComune = INDE_IndicesPorComune()
+        INDE_IndicesPorComune.gurl = request.json
+
+        return jsonify(INDE_IndicesPorComune.get_INDE_IndiciesPorComune_por_url())
+    
+    except Exception as e:
+        return jsonify("Entre en error en get_INDE_IndiciesPorComune_por_url", e)
+
+@app.route('/api/update_index_por_idindex', methods=['POST'])
+def update_INDE_IndiciesPorComune_por_idindex():
+    try:
+        from clases.Indices.INDE_IndicesPorComune import INDE_IndicesPorComune
+
+        INDE_IndicesPorComune = INDE_IndicesPorComune()
+
+        INDE_IndicesPorComune.gid_index = request.json['gid_index']
+        INDE_IndicesPorComune.gpais = request.json['gpais']
+        INDE_IndicesPorComune.gprovincia = request.json['gprovincia']
+        INDE_IndicesPorComune.gcomune = request.json['gcomune']
+        INDE_IndicesPorComune.gdesde = request.json['gdesde']
+        INDE_IndicesPorComune.ghasta = request.json['ghasta']
+        INDE_IndicesPorComune.gtipo = request.json['gtipo']
+        INDE_IndicesPorComune.gparte = request.json['gparte']
+        INDE_IndicesPorComune.gconindice = int(request.json['gconindice'])
+        INDE_IndicesPorComune.gconcatalogo = int(request.json['gconcatalogo'])
+        INDE_IndicesPorComune.gobservaciones = request.json['gobservaciones']
+        INDE_IndicesPorComune.gurl = request.json['gurl']
+
+        INDE_IndicesPorComune.update_INDE_IndiciesPorComune_por_idindex()
+
+        return jsonify("ok")
+    
+    except Exception as e:
+        return jsonify("Entre en error en get_INDE_IndiciesPorComune_por_url", e)
+
+
+
 
 
 ###RUTAS DE PERSONAS_BUSQUEDAS
